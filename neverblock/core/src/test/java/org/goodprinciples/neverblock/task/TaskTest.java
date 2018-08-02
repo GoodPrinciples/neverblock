@@ -16,4 +16,14 @@ public class TaskTest {
 		Assert.assertEquals("request payload must not be modified!", requestPayload, task.request());
 	}
 
+	@Test
+	public void accepted() {
+		String requestPayload = "request payload";
+		Task<String, String> task = new Task<String, String>(requestPayload);
+
+		task.accepted();
+
+		Assert.assertEquals("when a task is accepted it must be in ACCEPTED status!", Status.ACCEPTED, task.status());
+	}
+
 }
