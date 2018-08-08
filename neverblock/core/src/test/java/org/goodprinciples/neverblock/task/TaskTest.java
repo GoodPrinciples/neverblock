@@ -1,5 +1,6 @@
 package org.goodprinciples.neverblock.task;
 
+import org.goodprinciples.neverblock.scheduler.Scheduler;
 import org.goodprinciples.neverblock.task.Task.Status;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,6 +25,35 @@ public class TaskTest {
 		task.accepted();
 
 		Assert.assertEquals("when a task is accepted it must be in ACCEPTED status!", Status.ACCEPTED, task.status());
+	}
+
+	public void scheduled() {
+		Task<String, String> task = new Task<String, String>("sample task");
+		task.accepted();
+		task.scheduled(new Scheduler() {
+
+			@Override
+			public void schedule() {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public String id() {
+				return "ID";
+			}
+
+			@Override
+			public void accept(Task<?, ?> task) {
+				// TODO Auto-generated method stub
+
+			}
+		});
+
+		Assert.assertEquals("when scheduled the task must be in SCHEULED status!", Task.Status.SCHEDULED,
+				task.status());
+		Assert.assertNotNull("scheduledOn must not be null!", task.scheduledOn());
+		Assert.assertEquals("scheduledBy must be equals to the scheduler id!", "ID", task.scheduledBy());
 	}
 
 }

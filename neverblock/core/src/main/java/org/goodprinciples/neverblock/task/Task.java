@@ -5,13 +5,14 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.UUID;
 
+import org.goodprinciples.neverblock.scheduler.Scheduler;
+
 public class Task<REQ extends Serializable, RESP extends Serializable> implements Serializable {
 
 	private static final long serialVersionUID = -8483137203782334895L;
 	
 	public static enum Status {
-		ACCEPTED,
-		RECEIVED
+		ACCEPTED, RECEIVED, SCHEDULED
 	}
 	
 	//SECTION: instance variables
@@ -20,6 +21,8 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 	private UUID id = null;
 	private Calendar receivedOn = null;
 	private REQ request = null;
+	private String scheduledBy = "NONE";
+	private Calendar scheduledOn = null;
 	private Status status = null;
 	
 	//SECTION: constructors
@@ -38,6 +41,9 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 	}
 	
 	public Calendar acceptedOn() {
+		if (acceptedOn == null) {
+			throw new IllegalStateException("acceptedOn not available for task in " + status);
+		}
 		return (Calendar) acceptedOn.clone();
 	}
 	
@@ -46,17 +52,43 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 	}
 	
 	public Calendar receivedOn() {
+		if (receivedOn == null) {
+			throw new IllegalStateException("receivedOn not available for task in " + status);
+		}
 		return (Calendar) receivedOn.clone();
 	}
 	
 	public REQ request() {
 		return request;
 	}
-	
+
+	public void scheduled(Scheduler scheduler) {
+		setStatus(Status.SCHEDULED);
+		setScheduledBy(scheduler);
+		setScheduledOn(new GregorianCalendar());
+	}
+
+	public String scheduledBy() {
+		return scheduledBy;
+	}
+
+	public Calendar scheduledOn() {
+		if (scheduledOn == null) {
+			throw new IllegalStateException("scheduledOn not available for task in " + status);
+		}
+		return (Calendar) scheduledOn.clone();
+	}
+
 	public Status status() {
 		return status;
 	}
 	
+	@Override // inherited from java.lang.Object
+	public String toString() {
+		return new StringBuilder("Task {id = \"").append(id).append("\", status = \"").append(status).append("\"}")
+				.toString();
+	}
+
 	//SECTION: private methods
 	
 	private boolean isLegalStatusTransition(Status nextStatus) {
@@ -66,9 +98,11 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 		
 		switch (this.status) {
 			case ACCEPTED:
-				return false;
+				return nextStatus == Status.SCHEDULED;
 			case RECEIVED:
 				return nextStatus == Status.ACCEPTED;
+			case SCHEDULED:
+				return false;
 			default:
 				return false;
 		}
@@ -78,7 +112,7 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 		setStatus(Status.RECEIVED);
 		setReceivedOn(new GregorianCalendar());
 	}
-	
+
 	private void setAcceptedOn(Calendar acceptedOn) {
 		if (acceptedOn == null) {
 			throw new IllegalArgumentException("acceptedOn can't be null!");
@@ -111,6 +145,22 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 		this.request = request;
 	}
 	
+	private void setScheduledBy(Scheduler scheduler) {
+		if (scheduler == null) {
+			throw new IllegalArgumentException("scheduler can't be null!");
+		}
+
+		this.scheduledBy = scheduler.id();
+	}
+
+	private void setScheduledOn(Calendar scheduledOn) {
+		if (scheduledOn == null) {
+			throw new IllegalArgumentException("scheduledOn can't be null!");
+		}
+
+		this.scheduledOn = scheduledOn;
+	}
+
 	private void setStatus(Status nextStatus) {
 		if (nextStatus == null) {
 			throw new IllegalArgumentException("task status can't be null!");
