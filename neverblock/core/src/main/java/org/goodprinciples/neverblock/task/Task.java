@@ -11,6 +11,8 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 
 	private static final long serialVersionUID = -8483137203782334895L;
 	
+	private static final String NONE = "NONE";
+
 	public static enum Status {
 		ACCEPTED, RECEIVED, SCHEDULED
 	}
@@ -21,7 +23,7 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 	private UUID id = null;
 	private Calendar receivedOn = null;
 	private REQ request = null;
-	private String scheduledBy = "NONE";
+	private String scheduledBy = NONE;
 	private Calendar scheduledOn = null;
 	private Status status = null;
 	
@@ -58,6 +60,21 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 		return (Calendar) receivedOn.clone();
 	}
 	
+	public void released(Scheduler scheduler) {
+		if (scheduler == null) {
+			throw new IllegalArgumentException("scheduler can't be null!");
+		}
+
+		if (!scheduler.id().equals(scheduledBy)) {
+			throw new IllegalArgumentException("task " + id + " can't be released by " + scheduler.id()
+					+ " because is has been scheduled by " + scheduledBy + "!");
+		}
+
+		setStatus(Status.ACCEPTED);
+		this.scheduledBy = NONE;
+		this.scheduledOn = null;
+	}
+
 	public REQ request() {
 		return request;
 	}
@@ -102,7 +119,7 @@ public class Task<REQ extends Serializable, RESP extends Serializable> implement
 			case RECEIVED:
 				return nextStatus == Status.ACCEPTED;
 			case SCHEDULED:
-				return false;
+				return nextStatus == Status.ACCEPTED;
 			default:
 				return false;
 		}

@@ -41,6 +41,31 @@ public class TestOnDemandScheduler {
 	}
 
 	@Test
+	public void release() {
+		Task<String, String> task = new Task<String, String>("sample task");
+		task.accepted();
+		task.scheduled(classUnderTest);
+
+		List<Task<?, ?>> scheduledTasks = new LinkedList<>();
+		scheduledTasks.add(task);
+
+		EasyMock.expect(taskRepositoryMock.findByStatusAndScheduler(EasyMock.eq(Task.Status.SCHEDULED),
+				EasyMock.eq(classUnderTest))).andReturn(scheduledTasks);
+
+		Capture<Task<?, ?>> capturedTask = EasyMock.newCapture();
+		taskRepositoryMock.update(EasyMock.capture(capturedTask));
+
+		EasyMock.replay(taskRepositoryMock);
+
+		classUnderTest.release();
+
+		EasyMock.verify(taskRepositoryMock);
+
+		Assert.assertEquals("released tasks must be in ACCEPTED status!", Task.Status.ACCEPTED,
+				capturedTask.getValue().status());
+	}
+
+	@Test
 	public void schedule() {
 		Task<String, String> task = new Task<String, String>("sample task");
 		task.accepted();

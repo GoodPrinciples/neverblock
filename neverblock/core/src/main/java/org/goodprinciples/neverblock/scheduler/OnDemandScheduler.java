@@ -13,35 +13,71 @@ public class OnDemandScheduler implements Scheduler {
 	
 	private static final Logger LOGGER = LogManager.getLogger(OnDemandScheduler.class);
 
-	//SECTION: instance variables
+	// SECTION: instance variables
 	
 	private String id = null;
 	private TaskRepository taskRepository = null;
 	
-	//SECTION: constructors
+	// SECTION: constructors
 	
+	/**
+	 * Creates a new instance of this scheduler. The identifiers will be automatically generated using the host name of
+	 * machine running the class.
+	 * 
+	 * @param taskRepository
+	 *            task repository
+	 */
 	public OnDemandScheduler(TaskRepository taskRepository) {
 		this(null, taskRepository);
 	}
 
+	/**
+	 * Creates a new instance of this scheduler.
+	 * 
+	 * @param id
+	 *            scheduler's identifier
+	 * @param taskRepository
+	 *            task repository
+	 */
 	public OnDemandScheduler(String id, TaskRepository taskRepository) {
 		setId(id);
 		setTaskRepository(taskRepository);
 	}
 	
-	//SECTION: public methods
+	// SECTION: public methods
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override // inherited from org.goodprinciples.neverblock.scheduler.Scheduler
 	public void accept(Task<?, ?> task) {
 		task.accepted();
 		taskRepository.insert(task);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override // inherited from org.goodprinciples.neverblock.scheduler.Scheduler
 	public String id() {
 		return id;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override // inherited from org.goodprinciples.neverblock.scheduler.Scheduler
+	public void release() {
+		List<Task<?, ?>> scheduledTasks = taskRepository.findByStatusAndScheduler(Task.Status.SCHEDULED, this);
+		for (Task<?, ?> task: scheduledTasks) {
+			task.released(this);
+			taskRepository.update(task);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override // inherited from org.goodprinciples.neverblock.scheduler.Scheduler
 	public void schedule() {
 		List<Task<?, ?>> acceptedTasks = taskRepository.findByStatus(Task.Status.ACCEPTED);
